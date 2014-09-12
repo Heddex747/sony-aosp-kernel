@@ -753,7 +753,7 @@ static int msm8974_mclk_event(struct snd_soc_dapm_widget *w,
 	return 0;
 }
 
-static const struct snd_soc_dapm_widget shinano_msm8974_dapm_widgets[] = {
+static const struct snd_soc_dapm_widget sony_msm8974_dapm_widgets[] = {
 
 	SND_SOC_DAPM_SUPPLY("MCLK",  SND_SOC_NOPM, 0, 0,
 	msm8974_mclk_event, SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
@@ -1764,8 +1764,8 @@ static int msm_audrx_init(struct snd_soc_pcm_runtime *rtd)
 		return err;
 	}
 
-	snd_soc_dapm_new_controls(dapm, shinano_msm8974_dapm_widgets,
-				ARRAY_SIZE(shinano_msm8974_dapm_widgets));
+	snd_soc_dapm_new_controls(dapm, sony_msm8974_dapm_widgets,
+				ARRAY_SIZE(sony_msm8974_dapm_widgets));
 
 	snd_soc_dapm_enable_pin(dapm, "Lineout_1 amp");
 	snd_soc_dapm_enable_pin(dapm, "Lineout_3 amp");
