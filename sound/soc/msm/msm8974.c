@@ -62,15 +62,13 @@ static int msm8974_auxpcm_rate = 8000;
 #define LO_4_SPK_AMP	0x8
 
 
-#define MSM8974AB_MI2S_MUXSEL
-
-#ifdef MSM8974AB_MI2S_MUXSEL
+#ifdef CONFIG_MACH_SONY_SHINANO
 #define LPAIF_PRI_MODE_MUXSEL (LPAIF_OFFSET + 0x2C000)
 #define LPAIF_SEC_MODE_MUXSEL (LPAIF_OFFSET + 0x2D000)
 #define LPAIF_TER_MODE_MUXSEL (LPAIF_OFFSET + 0x2E000)
 #define LPAIF_QUAD_MODE_MUXSEL (LPAIF_OFFSET + 0x2F000)
-#else
 #endif
+
 #define I2S_PCM_SEL 1
 #define I2S_PCM_SEL_OFFSET 1
 
@@ -90,6 +88,7 @@ static int msm8974_auxpcm_rate = 8000;
 
 #define NUM_OF_AUXPCM_GPIOS 4
 
+#ifdef CONFIG_MACH_SONY_SHINANO
 #define GPIO_QUAT_MI2S_SCK   58
 #define GPIO_QUAT_MI2S_WS    59
 #define GPIO_QUAT_MI2S_DATA0 60
@@ -149,6 +148,7 @@ static struct afe_clk_cfg lpass_mi2s_disable = {
 	Q6AFE_LPASS_MODE_BOTH_VALID,
 	0,
 };
+#endif
 
 static void *adsp_state_notifier;
 
@@ -190,12 +190,20 @@ static struct wcd9xxx_mbhc_config mbhc_cfg = {
 	.read_fw_bin = false,
 	.calibration = NULL,
 	.micbias = MBHC_MICBIAS2,
+#ifdef CONFIG_MACH_SONY_SHINANO
 	.anc_micbias = MBHC_MICBIAS3,
+#else
+	.anc_micbias = MBHC_MICBIAS2,
+#endif
 	.mclk_cb_fn = msm_snd_enable_codec_ext_clk,
 	.mclk_rate = TAIKO_EXT_CLK_RATE,
 	.gpio = 0,
 	.gpio_irq = 0,
+#ifdef CONFIG_MACH_SONY_SHINANO
 	.gpio_level_insert = 0,
+#else
+	.gpio_level_insert = 1,
+#endif
 	.detect_extn_cable = true,
 	.micbias_enable_flags = 1 << MBHC_MICBIAS_ENABLE_THRESHOLD_HEADSET,
 	.insert_detect = true,
@@ -1375,6 +1383,7 @@ static struct snd_soc_ops msm_sec_auxpcm_be_ops = {
 	.shutdown = msm_sec_auxpcm_shutdown,
 };
 
+#ifdef CONFIG_MACH_SONY_SHINANO
 static int msm8974_configure_quat_mi2s_gpio(void)
 {
 	int ret;
@@ -1461,6 +1470,7 @@ static struct snd_soc_ops msm8974_mi2s_be_ops = {
 	.startup = msm8974_mi2s_startup,
 	.shutdown = msm8974_mi2s_shutdown
 };
+#endif
 
 static int msm_slim_0_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 					    struct snd_pcm_hw_params *params)
@@ -1468,14 +1478,20 @@ static int msm_slim_0_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *rate = hw_param_interval(params,
 	SNDRV_PCM_HW_PARAM_RATE);
 
+#ifdef CONFIG_MACH_SONY_SHINANO
 	struct snd_interval *channels =
 	    hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
+#endif
 
 	pr_debug("%s()\n", __func__);
+#ifdef CONFIG_MACH_SONY_SHINANO
 	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
 				   slim0_rx_bit_format);
+#endif
 	rate->min = rate->max = slim0_rx_sample_rate;
+#ifdef CONFIG_MACH_SONY_SHINANO
 	channels->min = channels->max = msm_slim_0_rx_ch;
+#endif
 
 	 pr_debug("%s: format = %d, rate = %d, channels = %d\n",
 			  __func__, params_format(params), params_rate(params),
@@ -1891,8 +1907,13 @@ void *def_taiko_mbhc_cal(void)
 	S(n_btn_meas, 1);
 	S(n_btn_con, 2);
 	S(num_btn, WCD9XXX_MBHC_DEF_BUTTONS);
+#ifdef CONFIG_MACH_SONY_SHINANO
 	S(v_btn_press_delta_sta, 0);
 	S(v_btn_press_delta_cic, 0);
+#else
+	S(v_btn_press_delta_sta, 100);
+	S(v_btn_press_delta_cic, 50);
+#endif
 #undef S
 	btn_cfg = WCD9XXX_MBHC_CAL_BTN_DET_PTR(taiko_cal);
 	btn_low = wcd9xxx_mbhc_cal_btn_det_mp(btn_cfg, MBHC_BTN_DET_V_BTN_LOW);
@@ -2430,6 +2451,7 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA6,
 	},
+#ifdef CONFIG_MACH_SONY_SHINANO
 	/* Voice Stub For Loopback */
 	{
 		.name = "Voice Stub",
@@ -2445,6 +2467,7 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
+#endif
 	{
 		.name = "Listen 2 Audio Service",
 		.stream_name = "Listen 2 Audio Service",
@@ -2587,6 +2610,8 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops = &msm8974_slimbus_2_be_ops,
 	},
+#ifndef CONFIG_MACH_SONY_SHINANO
+#endif
 	{
 		.name = "VoWLAN",
 		.stream_name = "VoWLAN",
@@ -2602,6 +2627,7 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.codec_name = "snd-soc-dummy",
 		.be_id = MSM_FRONTEND_DAI_VOWLAN,
 	},
+#ifdef CONFIG_MACH_SONY_SHINANO
 	{
 		.name = "MSM8974 Media9",
 		.stream_name = "MultiMedia9",
@@ -2617,6 +2643,7 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA9,
 	},
+#endif
 	/* Backend BT/FM DAI Links */
 	{
 		.name = LPASS_BE_INT_BT_SCO_RX,
@@ -2908,6 +2935,7 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
 	},
+#ifdef CONFIG_MACH_SONY_SHINANO
 	/* MI2S Playback BACK END DAI Link */
 	{
 		.name = LPASS_BE_QUAT_MI2S_RX,
@@ -2934,6 +2962,7 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ops = &msm8974_mi2s_be_ops,
 	},
+#endif
 	/* Incall Music 2 BACK END DAI Link */
 	{
 		.name = LPASS_BE_VOICE2_PLAYBACK_TX,
@@ -2946,7 +2975,7 @@ static struct snd_soc_dai_link msm8974_common_dai_links[] = {
 		.be_id = MSM_BACKEND_DAI_VOICE2_PLAYBACK_TX,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
-	},
+	}
 };
 
 static struct snd_soc_dai_link msm8974_hdmi_dai_link[] = {
